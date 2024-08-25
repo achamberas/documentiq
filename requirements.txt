@@ -1,0 +1,24 @@
+altair
+pandas
+streamlit
+dill
+# scikit-learn==1.2.2
+scipy
+pyarrow
+# snowflake-connector-python
+google-api-python-client
+google-api-core
+google-auth
+google-cloud-bigquery
+google-cloud-storage
+db-dtypes
+
+pypdf 
+langchain 
+langchain_community 
+langchain_experimental 
+langchain_openai
+
+pandas_gbq
+docx2txt
+rapidocr-onnxruntime

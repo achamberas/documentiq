@@ -1,0 +1,6 @@
+utils/__pycache__
+creds/*.json
+docs/*
+.streamlit/secrets.toml
+venv
+.DS_Store
