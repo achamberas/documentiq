@@ -12,6 +12,12 @@ from langchain_community.document_loaders import Docx2txtLoader
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain
+
+
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
@@ -30,9 +36,6 @@ def update_db(key, df):
         if len(deleted_rows)>0:
             deleted_docs = [df['source'][x] for x in deleted_rows]
             deleted_list = "','".join(deleted_docs)
-
-            sql = f'DELETE FROM `rag_test.document_chunks` where source in (\'{deleted_list}\')'
-            delete_chunks = bq_conn(sql)
 
             sql = f'DELETE FROM `rag_test.embeddings` where source in (\'{deleted_list}\')'
             delete_embeddings = bq_conn(sql)
@@ -67,6 +70,8 @@ def main():
         upload_file_data = uploaded_file.read()
 
         with st.form("load_form"):
+
+            friendly_name = st.text_input(label='Name', value=upload_file_name)
 
             if uploaded_file.type == 'text/plain':
                 # save file locally
@@ -124,7 +129,7 @@ def main():
             submitted = st.form_submit_button("Submit")
 
             if submitted:
-                with st.spinner('Processing document...'):
+                with st.spinner('Splitting document...'):
 
                     # split text into chunks
                     # split_type = 'text'
@@ -155,6 +160,8 @@ def main():
                     df['embedding_type'] = 'details'
                     df['split_type'] = split_type
 
+                with st.spinner('Creating embeddings...'):
+
                     # create embeddings
                     embed = OpenAIEmbeddings(model="text-embedding-3-large")
 
@@ -163,13 +170,46 @@ def main():
                     # df = df.convert_dtypes()
                     df = df.reset_index()
 
-                    # load to big query
+                with st.spinner('Summarizing document...'):
+
+                    # summarize document using map-reduce
+                    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+                    
+                    # Map
+                    map_template = """The following is a set of documents
+                    {docs}
+                    Based on this list of docs, please identify the main themes in 300 or fewer words
+                    Helpful Answer:"""
+                    map_prompt = PromptTemplate.from_template(map_template)
+                    map_chain = LLMChain(llm=llm, prompt=map_prompt)
+                    summary = map_chain.run(docs)
+
+                    st.write('### Document Summary')
+                    st.write(summary)
+
+                with st.spinner('Loading to database...'):
+
+                    # load embeddings to big query
                     GOOGLE_PROJECT = 'gristmill5'
                     credentials = service_account.Credentials.from_service_account_file("creds/gristmill5-e521e2f08f35.json")
                     client = bigquery.Client(GOOGLE_PROJECT, credentials)
                     job_config = bigquery.LoadJobConfig(autodetect=True)
+
                     job = client.load_table_from_dataframe(df,"gristmill5.rag_test.embeddings",job_config=job_config).result()
 
-                st.toast("Done!")
+                    # load document contents and summary to big query
+                    docs_df = pd.DataFrame()
+                    docs_df['name'] = friendly_name
+                    docs_df['filename'] = upload_file_name
+                    docs_df['contents'] = upload_file_data
+                    docs_df['summary'] = summary
+
+                    client.load_table_from_dataframe(docs_df,"gristmill5.rag_test.documents",job_config=job_config).result()
+                    if os.path.exists(upload_file_path):
+                        os.remove(upload_file_path)
+
+                st.success("Done!")
+
+
 
 main()

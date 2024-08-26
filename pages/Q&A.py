@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from utils.connectors import *
 from utils.routers import *
-from creds import openai
+
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 st.title('Q&A')
@@ -23,7 +23,7 @@ source_list = list(sources_df['source'])
 source = st.multiselect('source', options=source_list)
 query = st.text_input("Query", placeholder="Enter a question")
 words = st.number_input("Words", value=200)
-distance = st.slider("Vector distance", value=0.75, min_value=0.1, max_value=1.1, format="%f")
+similarity = st.slider("Similarity", value=0.25, min_value=0.1, max_value=1.0, format="%f")
 
 if len(query) > 0:
 
@@ -52,7 +52,8 @@ if len(query) > 0:
 
         n = 5
         top_n_idx = np.argsort(similarities['similarity'])[-n:]
-        references = data[['source', 'page', 'chunk', 'similarity']].iloc[top_n_idx]
+        references = data[['source', 'page', 'similarity', 'chunk']].iloc[top_n_idx]
+        references = references[references['similarity'].gt(similarity)].sort_values(['similarity'], ascending=False)
 
         if len(data) > 0:
 
@@ -78,11 +79,13 @@ if len(query) > 0:
             ]
             generated_text = llm.invoke(messages).content
 
+            st.write('### Response:')
             st.write(generated_text)
+            st.write('### References:')
             st.dataframe(references, use_container_width=True)
         else:
             st.write("### No results.")
 
-    st.success("Done!")
+    st.toast("Done!")
 
 
