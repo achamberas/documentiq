@@ -18,6 +18,8 @@ from langchain.chains.llm import LLMChain
 
 from utils.connectors import bq_load_from_df
 
+# os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+
 class Loaders:
     def __init__(self, uploaded_file, friendly_name):
 

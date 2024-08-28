@@ -2,33 +2,19 @@ import pandas as pd
 import streamlit as st
 import pandas_gbq as pdgbq
 import os
-import json
-import uuid
 
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.document_loaders import TextLoader
-from langchain_community.document_loaders import Docx2txtLoader
 # from langchain_google_community import BigQueryLoader
 # from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_experimental.text_splitter import SemanticChunker
-from langchain_openai.embeddings import OpenAIEmbeddings
-
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain.chains.llm import LLMChain
-from langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain
-
-from pypdf import PdfReader
-
-from google.oauth2 import service_account
-from google.cloud import bigquery
 
 from utils.connectors import *
 from utils.configs import *
 
 from utils.loaders import *
 
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+from dotenv import load_dotenv
+
+# load .env file to environment variables
+load_dotenv()
 
 # page_layout(title='Home')
 

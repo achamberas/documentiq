@@ -22,3 +22,5 @@ langchain_openai
 pandas_gbq
 docx2txt
 rapidocr-onnxruntime
+
+python-dotenv
