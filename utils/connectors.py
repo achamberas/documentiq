@@ -9,14 +9,13 @@ from google.cloud import bigquery
 
 GOOGLE_PROJECT = os.getenv("GOOGLE_PROJECT", 'gristmill5')
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", 'creds/gristmill5-e521e2f08f35.json')
+# credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS)
+# client = bigquery.Client(GOOGLE_PROJECT, credentials)
+client = bigquery.Client()
 
 def bq_conn(sql):
-
     try:
-        credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS)
-        client = bigquery.Client(GOOGLE_PROJECT, credentials)
         df = client.query(sql, project=GOOGLE_PROJECT).to_dataframe()
-
         return df
 
     except Exception as e:
@@ -24,9 +23,10 @@ def bq_conn(sql):
         return 'error running query'
 
 def bq_load_from_df(df, table):
-    # load embeddings to big query
-    credentials = service_account.Credentials.from_service_account_file(GOOGLE_APPLICATION_CREDENTIALS)
-    client = bigquery.Client(GOOGLE_PROJECT, credentials)
-    job_config = bigquery.LoadJobConfig(autodetect=True)
+    try:
+        job_config = bigquery.LoadJobConfig(autodetect=True)
+        job = client.load_table_from_dataframe(df,table,job_config=job_config).result()
 
-    job = client.load_table_from_dataframe(df,table,job_config=job_config).result()
+    except Exception as e:
+        print(e)
+        return 'error running query'

@@ -14,7 +14,7 @@ class RouteQuery(BaseModel):
         description="Given a user question choose whether to summarize a document or answer specific questions about details in the document",
     )
 
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+# os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
 
 structured_llm = llm.with_structured_output(RouteQuery)

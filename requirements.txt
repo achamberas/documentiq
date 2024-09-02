@@ -2,10 +2,10 @@ altair
 pandas
 streamlit
 dill
-# scikit-learn==1.2.2
+scikit-learn
 scipy
 pyarrow
-# snowflake-connector-python
+
 google-api-python-client
 google-api-core
 google-auth
@@ -24,3 +24,6 @@ docx2txt
 rapidocr-onnxruntime
 
 python-dotenv
+authlib
+
+streamlit_js_eval

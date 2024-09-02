@@ -8,8 +8,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from utils.connectors import *
 from utils.routers import *
+from utils.auth import auth
 
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+# os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+
+auth()
 
 st.title('Q&A')
 

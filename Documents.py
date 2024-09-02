@@ -1,14 +1,8 @@
-import pandas as pd
 import streamlit as st
-import pandas_gbq as pdgbq
-import os
 
-# from langchain_google_community import BigQueryLoader
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
-
+from utils.auth import login, fetch_token, get_user_info, auth
 from utils.connectors import *
 from utils.configs import *
-
 from utils.loaders import *
 
 from dotenv import load_dotenv
@@ -53,7 +47,7 @@ def main():
     # Load new documents
     st.write('Load New Documents')
 
-    uploaded_file = st.file_uploader("Choose a file",type=['pdf','json', 'txt', 'doc', 'docx'])
+    uploaded_file = st.file_uploader("Choose a file",type=['pdf','json', 'txt', 'docx'])
     if uploaded_file is not None:
 
         with st.form("load_form"):
@@ -92,4 +86,5 @@ def main():
 
                 st.success("Done!")
 
+auth()
 main()

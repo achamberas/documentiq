@@ -7,6 +7,7 @@ from pypdf import PdfReader
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import Docx2txtLoader
+# from langchain_google_community import BigQueryLoader
 
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai.embeddings import OpenAIEmbeddings
@@ -17,8 +18,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 
 from utils.connectors import bq_load_from_df
-
-# os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 class Loaders:
     def __init__(self, uploaded_file, friendly_name):
