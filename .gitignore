@@ -4,4 +4,4 @@ docs/*
 venv
 .DS_Store
 .env
-env-secrets.json
+expirements.ipynb

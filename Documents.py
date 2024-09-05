@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # page_layout(title='Home')
-
 def update_db(key, df):
     if key in st.session_state:
 
@@ -32,23 +31,58 @@ def update_db(key, df):
 def main():
     st.title('Documents')
 
-    # display loaded documents
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Local", "Web", "Clipboard", "API", "Database", "Existing"])
 
-    st.write('Loaded Documents')
+    with tab1:
+        st.subheader("Load Local Files")
+        with st.container(height=400):
+            uploaded_file = st.file_uploader("Choose a file",type=['pdf','json', 'txt', 'docx'])
+    with tab2:
+        st.subheader("Load Web Data")
+        with st.container(height=400):
+            web_url = st.text_input('Enter a url',key='web_url')
+        if web_url != '':
+            class uploaded_file:
+               name = web_url
+               type = 'html'
+    with tab3:
+        st.subheader("Load from Clipboard")
+        with st.container(height=400):
+            clipboard = st.text_area('Paste from clipboard',height=335)
+        if clipboard != '':
+            class uploaded_file:
+               name = clipboard[0:15]
+               type = 'clipboard'
+               contents = clipboard
+    with tab4:
+        st.subheader("Load from API")
+        with st.container(height=400):
+            api_action = st.selectbox('action',key='api_action', options=['GET', 'POST'])
+            api_url = st.text_input('host',key='api_url')
+            api_header = st.text_input('header',key='api_header')
+            api_body = st.text_input('body',key='api_body')
+    with tab5:
+        st.subheader("Load Database Tables")
+        with st.container(height=400):
+            db_type = st.selectbox('database',key='db_type', options=['BigQuery', 'Snowflake', 'Postgres', 'MySQL', 'SQL Server'])
+            db_host = st.text_input('host',key='db_host')
+            db_username = st.text_input('username',key='db_username')
+            db_password = st.text_input('password',key='db_password')
+    with tab6:
+        # display loaded documents
+        st.subheader("Loaded Documents")
+        sql = """
+        SELECT id, name
+        FROM `rag_test.documents`
+        ORDER BY name
+        """
 
-    sql = """
-    SELECT id, name
-    FROM `rag_test.documents`
-    """
+        sources_df = bq_conn(sql)
+        with st.container(height=400):
+            st.write('Previously loaded documents')
+            st.data_editor(sources_df['name'], key="source_table", num_rows="dynamic", use_container_width=True, hide_index=True, height=320, on_change=update_db("source_table", sources_df))
 
-    sources_df = bq_conn(sql)
-    st.data_editor(sources_df['name'], key="source_table", num_rows="dynamic", use_container_width=True, hide_index=True, height=400, on_change=update_db("source_table", sources_df))
-
-    # Load new documents
-    st.write('Load New Documents')
-
-    uploaded_file = st.file_uploader("Choose a file",type=['pdf','json', 'txt', 'docx'])
-    if uploaded_file is not None:
+    if uploaded_file is not None or web_url != '' or clipboard != '':
 
         with st.form("load_form"):
 

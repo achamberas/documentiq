@@ -7,6 +7,9 @@ from pypdf import PdfReader
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import Docx2txtLoader
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.documents import Document
+
 # from langchain_google_community import BigQueryLoader
 
 from langchain_experimental.text_splitter import SemanticChunker
@@ -27,13 +30,13 @@ class Loaders:
         self.friendly_name = friendly_name
         self.upload_file_type = uploaded_file.type
         self.upload_file_path = f'docs/tmp_{self.upload_file_name}'
-        self.upload_file_data = uploaded_file.read()
         self.upload_file_id = str(uuid.uuid4())
 
         
     def load_document(self):
         if self.upload_file_type == 'text/plain':
             # save file locally
+            self.upload_file_data = self.upload_file.read()
             with open(self.upload_file_path, 'wb') as uf:
                 uf.write(self.upload_file_data)
 
@@ -42,6 +45,7 @@ class Loaders:
 
         elif self.upload_file_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
             # save file locally
+            self.upload_file_data = self.upload_file.read()
             with open(self.upload_file_path, 'wb') as uf:
                 uf.write(self.upload_file_data)
 
@@ -50,6 +54,7 @@ class Loaders:
 
         elif self.upload_file_type == 'application/pdf':
             # save file locally
+            self.upload_file_data = self.upload_file.read()
             with open(self.upload_file_path, 'wb') as uf:
                 uf.write(self.upload_file_data)
 
@@ -61,9 +66,19 @@ class Loaders:
             self.loader_docs = loader.load()
 
         elif self.upload_file_type == 'application/json':
+            self.upload_file_data = self.upload_file.read()
             docs = json.loads(self.upload_file.getvalue())
             self.docs_df = pd.DataFrame(docs)
 
+        elif self.upload_file_type == 'html':
+            loader = WebBaseLoader(self.upload_file_name)
+            self.loader_docs = loader.load()
+            self.upload_file_data = '\n'.join([d.page_content for d in self.loader_docs])
+
+        elif self.upload_file_type == 'clipboard':
+            self.loader_docs = [Document(page_content=self.upload_file.contents)]
+            self.upload_file_data = self.upload_file.contents
+            
     def process_document(self, selected_columns=[]):
 
         if self.upload_file_type == 'application/json':
@@ -140,6 +155,7 @@ class Loaders:
 
         # load document contents and summary to big query
         docs_df = pd.DataFrame([[self.upload_file_id, self.friendly_name, self.upload_file_name, self.upload_file_type, self.upload_file_data, self.summary]], columns=['id', 'name', 'filename', 'filetype', 'contents', 'summary'])
+
         bq_load_from_df(docs_df, "gristmill5.rag_test.documents")
 
         # delete loaded document

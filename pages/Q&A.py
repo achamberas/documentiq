@@ -19,7 +19,9 @@ st.title('Q&A')
 sql = """
 SELECT id, name
 FROM `rag_test.documents`
+ORDER BY name
 """
+
 sources_df = bq_conn(sql)
 source_list = list(sources_df['name'])
 

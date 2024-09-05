@@ -49,8 +49,12 @@ def fetch_token():
     return token, state
 
 def get_user_info(token):
-    id_info = id_token.verify_oauth2_token(token['id_token'], requests.Request(), GOOGLE_CLIENT_ID)
-    return id_info
+    try:
+        id_info = id_token.verify_oauth2_token(token['id_token'], requests.Request(), GOOGLE_CLIENT_ID)
+        return id_info
+    except:
+        st.session_state.clear()
+        auth()
 
 def revoke_token(token, state):
     session = OAuth2Session(
@@ -75,10 +79,10 @@ def auth():
                     <h4>Log in to continue</h4>
                     <hr>
                     <div style="text-align: center;">
-                        <a href="{authorization_url}" style="width=300px; border: 1px solid #c3c3c3; color:black; padding: 10px 125px;; text-align: center; text-decoration: none; display: inline-block;" target="_self">
+                        <a href="{authorization_url}" style="border:1px solid #c3c3c3; color:black; padding:10px 125px; text-align:center; text-decoration:none; display:inline-block;" target="_self">
                             <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA", width=20/> 
-                            Google
-                        </a
+                            <span>Google</span>
+                        </a>
                     </div>
                     <hr>
                     <span style="color: #c3c3c3; font-size: small;">5 Grist Mill Road Acton, MA 01720</span>
@@ -97,13 +101,33 @@ def auth():
     else:
         user_info = get_user_info(st.session_state['token'])
 
-        col1, col2, col3 = st.columns([0.1,0.7,0.2])
+        with st.sidebar.container():
+            col1, col2 = st.columns([0.2,0.8])
+            with col1:
+                st.markdown("""
+                        <style>
+                        .st-emotion-cache-1v0mbdj {
+                            width: 45px;
+                            height: 45px;
+                            border-radius: 50%;
+                            overflow: hidden;
+                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+                        }
+                        
+                        .st-emotion-cache-1v0mbdj img {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
 
-        with col1:
-            st.image(user_info['picture'], width=50)
-        with col2:
-            st.write(f"Welcome {user_info['name']}  \n{user_info['email']}")
-        with col3:
+                
+                st.image(user_info['picture'], width=45)
+            with col2:
+                st.write(f"{user_info['name']}  \n{user_info['email']}")
+
+        with st.sidebar:
             # st.button("Logout", type="primary", on_click=revoke_token, args=[st.session_state['token'], st.session_state['state']])
             if st.button("Logout"):
                 revoke_token(st.session_state['token'], st.session_state['state'])
