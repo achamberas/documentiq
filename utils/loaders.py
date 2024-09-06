@@ -23,16 +23,14 @@ from langchain.chains.llm import LLMChain
 from utils.connectors import bq_load_from_df
 
 class Loaders:
-    def __init__(self, uploaded_file, friendly_name):
+    def __init__(self, uploaded_file):
 
         self.upload_file = uploaded_file
         self.upload_file_name = uploaded_file.name
-        self.friendly_name = friendly_name
         self.upload_file_type = uploaded_file.type
         self.upload_file_path = f'docs/tmp_{self.upload_file_name}'
         self.upload_file_id = str(uuid.uuid4())
 
-        
     def load_document(self):
         if self.upload_file_type == 'text/plain':
             # save file locally
@@ -148,17 +146,16 @@ class Loaders:
         map_chain = LLMChain(llm=llm, prompt=map_prompt)
         self.summary = map_chain.run(self.docs)
 
-    def load_to_database(self):
+    def load_to_database(self, friendly_name):
 
         # load embeddings to big query
         bq_load_from_df(self.df, "gristmill5.rag_test.embeddings")
 
         # load document contents and summary to big query
-        docs_df = pd.DataFrame([[self.upload_file_id, self.friendly_name, self.upload_file_name, self.upload_file_type, self.upload_file_data, self.summary]], columns=['id', 'name', 'filename', 'filetype', 'contents', 'summary'])
+        docs_df = pd.DataFrame([[self.upload_file_id, friendly_name, self.upload_file_name, self.upload_file_type, self.upload_file_data, self.summary]], columns=['id', 'name', 'filename', 'filetype', 'contents', 'summary'])
 
         bq_load_from_df(docs_df, "gristmill5.rag_test.documents")
 
         # delete loaded document
         if os.path.exists(self.upload_file_path):
             os.remove(self.upload_file_path)
-

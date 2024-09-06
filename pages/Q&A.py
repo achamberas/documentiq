@@ -2,42 +2,77 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
+import time
 
 from langchain_openai.embeddings import OpenAIEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 
+from utils.components import doc_load_ui
+
 from utils.connectors import *
 from utils.routers import *
+from utils.styles import *
 from utils.auth import auth
 
 # os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
+add_styles()
 auth()
 
-st.title('Q&A')
 
+
+
+col1, col2 = st.columns([0.85,0.15])
+
+with col1:
+    st.title('Q&A')
+with col2:
+    with st.popover('⚙️'):
+        words = st.number_input("Words", value=200)
+        similarity = st.slider("Similarity", value=0.25, min_value=0.1, max_value=1.0, format="%f")
+
+#stream
+def stream_data(text):
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.02)
+
+# modal
+@st.dialog("Load New Documents", width="large")
+def load_new():
+    if 'current_step' not in st.session_state:
+        st.session_state['current_step'] = 1
+    doc_load_ui()
+
+# get list of documents
 sql = """
 SELECT id, name
 FROM `rag_test.documents`
 ORDER BY name
 """
-
 sources_df = bq_conn(sql)
 source_list = list(sources_df['name'])
 
-sources = st.multiselect(
-    'source', 
-    options= range(len(source_list)),
-    format_func=source_list.__getitem__,
-)
+# controls
+with st.container():
+    col1, col2 = st.columns([0.08,0.92])
+    with col1:
+        if st.button('📎', type='secondary'):
+            load_new()
+    with col2:
+        sources = st.multiselect(
+            "source",
+            options= range(len(source_list)),
+            format_func=source_list.__getitem__,
+            label_visibility='collapsed'
+        )
 
-source_ids = list(sources_df['id'].iloc[sources])
 query = st.text_input("Query", placeholder="Enter a question")
-words = st.number_input("Words", value=200)
-similarity = st.slider("Similarity", value=0.25, min_value=0.1, max_value=1.0, format="%f")
 
+# execute query
 if len(query) > 0:
 
+    source_ids = list(sources_df['id'].iloc[sources])
     route_type = router.invoke({"question": query}).datasource
 
     with st.spinner('Fetching ' + route_type + '...'):
@@ -106,7 +141,8 @@ if len(query) > 0:
             generated_text = llm.invoke(messages).content
 
             st.write('### Response:')
-            st.write(generated_text)
+            # st.write(generated_text)
+            st.write_stream(stream_data(generated_text))
             st.write('### References:')
             st.dataframe(references, use_container_width=True)
         else:

@@ -104,32 +104,11 @@ def auth():
         with st.sidebar.container():
             col1, col2 = st.columns([0.2,0.8])
             with col1:
-                st.markdown("""
-                        <style>
-                        .st-emotion-cache-1v0mbdj {
-                            width: 45px;
-                            height: 45px;
-                            border-radius: 50%;
-                            overflow: hidden;
-                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-                        }
-                        
-                        .st-emotion-cache-1v0mbdj img {
-                            width: 100%;
-                            height: 100%;
-                            object-fit: cover;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-
-                
                 st.image(user_info['picture'], width=45)
             with col2:
                 st.write(f"{user_info['name']}  \n{user_info['email']}")
 
-        with st.sidebar:
-            # st.button("Logout", type="primary", on_click=revoke_token, args=[st.session_state['token'], st.session_state['state']])
-            if st.button("Logout"):
+            if st.button("👋 Logout", type='secondary'):
                 revoke_token(st.session_state['token'], st.session_state['state'])
                 st.session_state.clear()
                 streamlit_js_eval(js_expressions=f'parent.window.open("{REDIRECT_URI}","_self")')
