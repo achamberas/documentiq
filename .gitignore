@@ -5,3 +5,4 @@ venv
 .DS_Store
 .env
 expirements.ipynb
+.DS_Store

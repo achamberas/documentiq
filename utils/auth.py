@@ -68,6 +68,8 @@ def revoke_token(token, state):
 
 def auth():
 
+    st.logo(f'{REDIRECT_URI}/app/static/logo.png', icon_image=f'{REDIRECT_URI}/app/static/logo_black.png')
+
     if 'token' not in st.session_state and not(st.query_params.get('code')) and 'code' not in st.session_state:
         authorization_url = login()
         container = st.container(border=True)
@@ -75,8 +77,8 @@ def auth():
         container.html(f"""
             <html>
                 <div style="text-align: center;">
-                    <img src="https://static.wixstatic.com/media/1e9daa_c5683a65a4104970b975725eb64fc0f7~mv2.png/v1/fill/w_93,h_93,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/logo.png", width=100>
-                    <h4>Log in to continue</h4>
+                    <img src="app/static/logo.png", width=200>
+                    <h5>Log in to continue</h5>
                     <hr>
                     <div style="text-align: center;">
                         <a href="{authorization_url}" style="border:1px solid #c3c3c3; color:black; padding:10px 125px; text-align:center; text-decoration:none; display:inline-block;" target="_self">
@@ -102,7 +104,7 @@ def auth():
         user_info = get_user_info(st.session_state['token'])
 
         with st.sidebar.container():
-            col1, col2 = st.columns([0.2,0.8])
+            col1, col2 = st.columns([0.23,0.77])
             with col1:
                 st.image(user_info['picture'], width=45)
             with col2:

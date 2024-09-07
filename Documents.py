@@ -34,14 +34,39 @@ def main():
 
     # display loaded documents
     sql = """
-    SELECT id, name
+    SELECT id, name, filetype as type
     FROM `rag_test.documents`
     ORDER BY name
     """
 
     sources_df = bq_conn(sql)
+
+    filetypes = [
+        {'type':'text/plain', 'image':'txt-file.png'},
+        {'type':'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image':'word-file.png'},
+        {'type':'application/pdf', 'image':'pdf-file.png'},
+        {'type':'application/json', 'image':'json-file.png'},
+        {'type':'html', 'image':'web.png'},
+        {'type':'clipboard', 'image':'clipboard.png'}
+    ]
+
+    filetypes_df = pd.DataFrame(filetypes)
+
+    df = sources_df.merge(filetypes_df, on='type')
+    df['image_path'] = 'app/static/' + df['image']
+
     st.write('Previously loaded documents')
-    st.data_editor(sources_df['name'], key="source_table", num_rows="dynamic", use_container_width=True, hide_index=True, on_change=update_db("source_table", sources_df))
+    st.data_editor(
+        df[['image_path','name']], 
+        column_config={
+            "image_path": st.column_config.ImageColumn(label="type", width="small")
+        },
+        key="source_table", 
+        num_rows="dynamic", 
+        use_container_width=False, 
+        hide_index=True, 
+        on_change=update_db("source_table", sources_df)
+    )
 
 add_styles()
 auth()

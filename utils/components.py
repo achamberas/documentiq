@@ -21,8 +21,9 @@ def doc_load_ui():
     with st.container(height=450, border=False):
         with st.container(height=390):
             if st.session_state['current_step'] == 1:
-                tab1, tab2, tab3 = st.tabs(["Local", "Web", "Clipboard"])
+                st.session_state['doc_loader'] = None
 
+                tab1, tab2, tab3 = st.tabs(["Local", "Web", "Clipboard"])
                 with tab1:
                     st.subheader("Load Local Files")
                     with st.container():
@@ -49,53 +50,69 @@ def doc_load_ui():
         
             if st.session_state['current_step'] == 2:
 
-                uploaded_file = st.session_state['uploaded_file']
-
-                doc_loader = Loaders(uploaded_file)
-                doc_loader.load_document()
-
-                if doc_loader.upload_file_type == 'application/json':
-                    options = doc_loader.docs_df.columns
-                    st.multiselect(label='Select the keys from the JSON file that you\'d like included in the documents.', options=options, key='json_keys')
-                    selected_columns = st.session_state['json_keys']
-                else:
-                    selected_columns = []
-
-                with st.spinner('Loading document...'):
-                    doc_loader.process_document(selected_columns)
-
-                with st.spinner('Splitting document...'):
-                    split_type = 'semantic'
-                    doc_loader.split_document(split_type)
-
-                with st.spinner('Creating embeddings...'):
-                    doc_loader.create_embeddings()
-
-                with st.spinner('Summarizing document...'):
-                    doc_loader.summarize_document()
+                if hasattr(st.session_state['doc_loader'], 'summary'):
                     st.write('### Document Summary')
-                    st.write(doc_loader.summary)
+                    st.write( st.session_state['doc_loader'].summary)
+
+                else:
+
+                    uploaded_file = st.session_state['uploaded_file']
+
+                    doc_loader = Loaders(uploaded_file)
+                    doc_loader.load_document()
+
+                    if doc_loader.upload_file_type == 'application/json':
+                        options = doc_loader.docs_df.columns
+                        st.multiselect(label='Select the keys from the JSON file that you\'d like included in the documents.', options=options, key='json_keys')
+                        selected_columns = st.session_state['json_keys']
+                    else:
+                        selected_columns = []
+
+                    with st.spinner('Loading document...'):
+                        doc_loader.process_document(selected_columns)
+
+                    with st.spinner('Splitting document...'):
+                        split_type = 'semantic'
+                        doc_loader.split_document(split_type)
+
+                    with st.spinner('Creating embeddings...'):
+                        doc_loader.create_embeddings()
+
+                    with st.spinner('Summarizing document...'):
+                        doc_loader.summarize_document()
+                        st.write('### Document Summary')
+                        st.write(doc_loader.summary)
+
+                    st.session_state['doc_loader'] = doc_loader
 
             if st.session_state['current_step'] == 3:
 
                 uploaded_file = st.session_state['uploaded_file']
+                doc_loader = st.session_state['doc_loader']
 
-                with st.form("save_form", border=False):
-                    friendly_name = st.text_input(label='Name', value=uploaded_file.name)
-                    submitted = st.form_submit_button("Save")
+                save_container = st.container(border=False)
 
-                    if submitted:
-                        with st.spinner('Saving to database...'):
-                            doc_loader.load_to_database(friendly_name)
-                        st.success("Done!")
+                friendly_name = save_container.text_input(label='Name', value=uploaded_file.name)
 
         form_footer_container = st.empty()
         with form_footer_container.container():
             
             disable_back_button = True if st.session_state['current_step'] == 1 else False
-            disable_next_button = True if st.session_state['current_step'] == 3 else False
+            disable_next_button = False if st.session_state['uploaded_file'] else True
             
             form_footer_cols = st.columns([6,1,1])
 
             form_footer_cols[1].button('Back',on_click=set_form_step,args=['Back'],disabled=disable_back_button)
-            form_footer_cols[2].button('Next',on_click=set_form_step,args=['Next'],disabled=disable_next_button)    
+
+            if st.session_state['current_step'] < 3:
+                form_footer_cols[2].button('Next',on_click=set_form_step,args=['Next'],disabled=disable_next_button)
+            else:
+                save_button = form_footer_cols[2].button('Save')
+                if save_button:
+                    with save_container:
+                        with st.spinner('Saving to database...'):
+                            doc_loader.load_to_database(friendly_name)
+                            st.success("Done!")
+                            st.session_state['current_step'] == 1
+                            st.session_state['doc_loader'] = None
+                            st.rerun()
