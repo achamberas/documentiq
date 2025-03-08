@@ -14,7 +14,7 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_AUTHORIZATION_URL = os.getenv("GOOGLE_AUTHORIZATION_URL")
 GOOGLE_TOKEN_URL = os.getenv("GOOGLE_TOKEN_URL")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 GOOGLE_REVOKE_TOKEN_URL = os.getenv("GOOGLE_REVOKE_TOKEN_URL")
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -23,7 +23,7 @@ def login():
     session = OAuth2Session(
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
-        redirect_uri=REDIRECT_URI,
+        GOOGLE_REDIRECT_URI=GOOGLE_REDIRECT_URI,
         scope=['openid', 'email', 'profile'],
     )
     authorization_url, state = session.create_authorization_url(GOOGLE_AUTHORIZATION_URL)
@@ -33,13 +33,13 @@ def login():
 def fetch_token():
     url_params = st.query_params
     param_string = '&'.join([k+'='+urllib.parse.quote_plus(url_params[k]) for k in url_params])
-    authorization_response = REDIRECT_URI + '/?' + param_string
+    authorization_response = GOOGLE_REDIRECT_URI + '/?' + param_string
     state = url_params['state']
     
     session = OAuth2Session(
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
-        redirect_uri=REDIRECT_URI,
+        GOOGLE_REDIRECT_URI=GOOGLE_REDIRECT_URI,
         state=state,  # Retrieve the stored state
     )
 
@@ -60,7 +60,7 @@ def revoke_token(token, state):
     session = OAuth2Session(
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
-        redirect_uri=REDIRECT_URI,
+        GOOGLE_REDIRECT_URI=GOOGLE_REDIRECT_URI,
         state=state
     )
     session.revoke_token(GOOGLE_TOKEN_URL, token=token['access_token'])
@@ -68,7 +68,7 @@ def revoke_token(token, state):
 
 def auth():
 
-    st.logo(f'{REDIRECT_URI}/app/static/logo.png', icon_image=f'{REDIRECT_URI}/app/static/logo_black.png')
+    st.logo(f'{GOOGLE_REDIRECT_URI}/app/static/logo.png', icon_image=f'{GOOGLE_REDIRECT_URI}/app/static/logo_black.png')
 
     if 'token' not in st.session_state and not(st.query_params.get('code')) and 'code' not in st.session_state:
         authorization_url = login()
@@ -113,7 +113,7 @@ def auth():
             if st.button("👋 Logout", type='secondary'):
                 revoke_token(st.session_state['token'], st.session_state['state'])
                 st.session_state.clear()
-                streamlit_js_eval(js_expressions=f'parent.window.open("{REDIRECT_URI}","_self")')
+                streamlit_js_eval(js_expressions=f'parent.window.open("{GOOGLE_REDIRECT_URI}","_self")')
         return
 
 

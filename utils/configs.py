@@ -13,6 +13,7 @@ def page_layout(title='Home'):
         initial_sidebar_state=sidebar,
         page_title="Four37 - " + title,
         page_icon="🌎",
+        layout='wide'
     )
 
     margins_css = """

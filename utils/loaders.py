@@ -21,6 +21,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains.llm import LLMChain
 
 from utils.connectors import bq_load_from_df
+from utils.agents import financial_statement_parse
 
 class Loaders:
     def __init__(self, uploaded_file):
@@ -159,3 +160,7 @@ class Loaders:
         # delete loaded document
         if os.path.exists(self.upload_file_path):
             os.remove(self.upload_file_path)
+
+    def parse_document(self):
+        # parse finanical statements
+        self.parsed_document = financial_statement_parse(self.docs) 

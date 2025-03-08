@@ -22,15 +22,6 @@ def add_styles():
                 box-shadow: none !important;
                 color: black !important;
             }
-
-            .st-emotion-cache-1v0mbdj {
-                width: 45px;
-                height: 45px;
-                border-radius: 50%;
-                overflow: hidden;
-                box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            }
-            
             .st-emotion-cache-1v0mbdj img {
                 width: 100%;
                 height: 100%;

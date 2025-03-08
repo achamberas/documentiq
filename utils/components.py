@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 from utils.styles import *
 from utils.auth import login, fetch_token, get_user_info, auth
@@ -10,6 +11,13 @@ from dotenv import load_dotenv
 
 # load .env file to environment variables
 load_dotenv()
+
+
+#stream
+def stream_data(text):
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.02)
 
 def set_form_step(action):
     if action == 'Next':
@@ -116,3 +124,86 @@ def doc_load_ui():
                             st.session_state['current_step'] == 1
                             st.session_state['doc_loader'] = None
                             st.rerun()
+
+
+def data_load_ui():
+    with st.container(height=450, border=False):
+        with st.container(height=390):
+            if st.session_state['current_step'] == 1:
+                st.session_state['doc_loader'] = None
+
+                st.subheader("Load Local Files")
+                st.markdown("Upload financial statements in csv format.")
+                with st.container():
+                    uploaded_file = st.file_uploader("Choose a file",type=['csv'])
+
+                st.session_state['uploaded_file'] = uploaded_file
+        
+            if st.session_state['current_step'] == 2:
+
+                if hasattr(st.session_state['doc_loader'], 'summary'):
+                    st.write('### Document Summary')
+                    st.write( st.session_state['doc_loader'].summary)
+
+                else:
+
+                    uploaded_file = st.session_state['uploaded_file']
+
+                    doc_loader = Loaders(uploaded_file)
+                    doc_loader.load_document()
+                    selected_columns = []
+                    with st.spinner('Loading document...'):
+                        doc_loader.process_document(selected_columns)
+
+                    with st.spinner('Parsing document...'):
+                        doc_loader.parse_document()
+                    """
+                    with st.spinner('Splitting document...'):
+                        split_type = 'semantic'
+                        doc_loader.split_document(split_type)
+
+                    with st.spinner('Creating embeddings...'):
+                        doc_loader.create_embeddings()
+
+                    with st.spinner('Summarizing document...'):
+                        doc_loader.summarize_document()
+                        st.write('### Document Summary')
+                        st.write(doc_loader.summary)
+
+                    st.session_state['doc_loader'] = doc_loader
+                    """
+                    # df = pd.DataFrame(doc_loader.parsed_document)
+                    st.data_editor(doc_loader.parsed_document)
+
+            if st.session_state['current_step'] == 3:
+
+                uploaded_file = st.session_state['uploaded_file']
+                doc_loader = st.session_state['doc_loader']
+
+                save_container = st.container(border=False)
+
+                friendly_name = save_container.text_input(label='Name', value=uploaded_file.name)
+
+        form_footer_container = st.empty()
+        with form_footer_container.container():
+            
+            disable_back_button = True if st.session_state['current_step'] == 1 else False
+            disable_next_button = False if st.session_state['uploaded_file'] else True
+            
+            form_footer_cols = st.columns([6,1,1])
+
+            form_footer_cols[1].button('Back',on_click=set_form_step,args=['Back'],disabled=disable_back_button)
+
+            if st.session_state['current_step'] < 3:
+                form_footer_cols[2].button('Next',on_click=set_form_step,args=['Next'],disabled=disable_next_button)
+            else:
+                save_button = form_footer_cols[2].button('Save')
+                if save_button:
+                    with save_container:
+                        with st.spinner('Saving to database...'):
+                            doc_loader.load_to_database(friendly_name)
+                            st.success("Done!")
+                            st.session_state['current_step'] == 1
+                            st.session_state['doc_loader'] = None
+                            st.rerun()
+

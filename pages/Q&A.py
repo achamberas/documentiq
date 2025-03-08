@@ -2,12 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
-import time
 
 from langchain_openai.embeddings import OpenAIEmbeddings
+
+from langchain_google_vertexai import ChatVertexAI
+
 from sklearn.metrics.pairwise import cosine_similarity
 
-from utils.components import doc_load_ui
+from utils.components import doc_load_ui, stream_data
 
 from utils.connectors import *
 from utils.routers import *
@@ -19,9 +21,6 @@ from utils.auth import auth
 add_styles()
 auth()
 
-
-
-
 col1, col2 = st.columns([0.85,0.15])
 
 with col1:
@@ -30,12 +29,6 @@ with col2:
     with st.popover('⚙️'):
         words = st.number_input("Words", value=200)
         similarity = st.slider("Similarity", value=0.25, min_value=0.1, max_value=1.0, format="%f")
-
-#stream
-def stream_data(text):
-    for word in text.split(" "):
-        yield word + " "
-        time.sleep(0.02)
 
 # modal
 @st.dialog("Load New Documents", width="large")
@@ -133,6 +126,15 @@ if len(query) > 0:
                 # organization="...",
                 # other params...
             )
+
+            #llm = ChatVertexAI(
+            #    model="gemini-1.5-flash-001",
+            #    temperature=0,
+            #    max_tokens=None,
+            #    max_retries=6,
+            #    stop=None,
+            #    # other params...
+            #)
 
             messages = [
                 ("system", system_prompt),
