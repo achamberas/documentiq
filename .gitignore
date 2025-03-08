@@ -6,3 +6,4 @@ venv
 .env
 .env-dev
 expirements.ipynb
+*/.DS_Store
