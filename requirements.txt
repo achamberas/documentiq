@@ -31,4 +31,4 @@ streamlit_js_eval
 beautifulsoup4
 plotly==5.24.1
 
-linkedin_api
+markdown

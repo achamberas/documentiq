@@ -154,8 +154,27 @@ def generate_post(topic):
         max_retries=2,
     )
 
-    prompt = f"Create an engaging LinkedIn post about: {topic}. Keep it professional and insightful with a hint of personality.  It should be under 200 words.  Include a title with emojis.  Include references and their URLs."
+    prompt = f"Create an engaging LinkedIn post about: {topic}. Keep it professional and insightful with a hint of personality.  It should be under 200 words.  Include a title with emojis.  Do not use markdown.  Include references and their URLs.  Add a call to action that encourages the reader to reach out to Four37 to learn more."
     messages=[{"role": "system", "content": "You are an expert LinkedIn content writer."},
+        {"role": "user", "content": prompt}]
+ 
+    generated_text = llm.invoke(messages).content
+
+    return generated_text
+
+def generate_blog(post):
+    """Generate a blog article based on LinkedIn post"""
+
+    llm = ChatOpenAI(
+        model="gpt-4.5-preview",
+        temperature=0,
+        max_tokens=None,
+        timeout=None,
+        max_retries=2,
+    )
+
+    prompt = f"Write a blog article based off of this LinkedIn post: {post}.  It should be under 500-600 words.  Include a title.  Include references and their URLs.  Add a call to action that encourages the reader to reach out to Four37 to learn more."
+    messages=[{"role": "system", "content": "You are an expert blog writer that can create an article based off of LinkedIn post content."},
         {"role": "user", "content": prompt}]
  
     generated_text = llm.invoke(messages).content
@@ -204,7 +223,7 @@ def generate_image_caption(post):
         max_retries=2,
     )
 
-    prompt = f"Create a short and compelling caption that summarizes this LinkedIn post: {post}. The caption should be 15-20 words.  No commentary."
+    prompt = f"Create a short and compelling caption that summarizes this LinkedIn post: {post}. The caption should be 15-20 words.  No commentary.  Do not inclide hashtags."
     messages=[{"role": "system", "content": "You are a creative writer that creates captions for images that go with LinkedIn posts."},
         {"role": "user", "content": prompt}]
  

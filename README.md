@@ -16,9 +16,11 @@ Run app `streamlit run <app_name>.py`
 
 1. Create the following secrets in Google Secret Manager:
     * OPENAI_API_KEY
+    * LINKEDIN_CLIENT_SECRET
 ```
 {
-  "OPENAI_API_KEY": "PASSWORD_SECRET"
+  "OPENAI_API_KEY": "PASSWORD_SECRET",
+  "LINKEDIN_CLIENT_SECRET": "PASSWORD_SECRET"
 }
 ```
 
@@ -48,8 +50,15 @@ gcloud run deploy agentic \
 --region=us-east1 \
 --project=gristmill5 \
 --service-account=bq-service-account@gristmill5.iam.gserviceaccount.com \
---set-env-vars=GOOGLE_AUTHORIZATION_URL="https://accounts.google.com/o/oauth2/auth",GOOGLE_TOKEN_URL="https://oauth2.googleapis.com/token",GOOGLE_REVOKE_TOKEN_URL="https://accounts.google.com/o/oauth2/revoke",REDIRECT_URI="https://agentic-365900802361.us-east1.run.app" \
---update-secrets=OPENAI_API_KEY=OPENAI_API_KEY:1,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:1,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:1
+--set-env-vars= \
+    GOOGLE_AUTHORIZATION_URL="https://accounts.google.com/o/oauth2/auth", \
+    GOOGLE_TOKEN_URL="https://oauth2.googleapis.com/token", \
+    GOOGLE_REVOKE_TOKEN_URL="https://accounts.google.com/o/oauth2/revoke", \
+    REDIRECT_URI="https://agentic-365900802361.us-east1.run.app" \
+--update-secrets= \
+    OPENAI_API_KEY=OPENAI_API_KEY:1, \
+    GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:1, \
+    GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:1
 ```
 
 ## Embedding into a web page

@@ -7,6 +7,7 @@ import textwrap
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from urllib.parse import urlencode
+from utils.modules.markdown_to_ricos import MarkdownToRicosConverter
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'creds/gristmill5-e521e2f08f35.json'
 
@@ -54,11 +55,35 @@ def text_on_image(img, text, margin=10, font_size=60):
 
     return img
 
+def crop_image(img, left=0, top=50, right=800, bottom=510):
+    img_cropped = img.crop((left, top, right, bottom))
+    return img_cropped
+
+def image_to_bytes(img):
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    img_bytes = buffer.getvalue()
+
+    return img_bytes
+
+def generate_ricos(markdown_text):
+    """
+    Convert markdown text to RICOS format.
+    
+    Args:
+        markdown_text (str): The markdown text to convert
+        
+    Returns:
+        dict: A RICOS document
+    """
+    converter = MarkdownToRicosConverter()
+    return converter.convert(markdown_text)
+
 ####################
 ## LINKEDIN TOOLS ##
 ####################
 
-def get_authorization_code(linkedin_client_id, linkedin_redirect_uri, scope="r_liteprofile r_emailaddress w_member_social"):
+def get_linkedin_authorization_code(linkedin_client_id, linkedin_redirect_uri, scope="r_liteprofile r_emailaddress w_member_social"):
     """Generate the LinkedIn authorization URL and open it in a browser to obtain the authorization code."""
     auth_url = "https://www.linkedin.com/oauth/v2/authorization"
     params = {
@@ -72,7 +97,7 @@ def get_authorization_code(linkedin_client_id, linkedin_redirect_uri, scope="r_l
     webbrowser.open(url)
     print("Please authorize the app and enter the authorization code from the redirected URL.")
 
-def get_refresh_token(linkedin_client_id, linkedin_client_secret, authorization_code, linkedin_redirect_uri):
+def get_linkedin_refresh_token(linkedin_client_id, linkedin_client_secret, authorization_code, linkedin_redirect_uri):
     """Retrieve LinkedIn OAuth refresh token using an authorization code."""
     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
 
@@ -94,7 +119,7 @@ def get_refresh_token(linkedin_client_id, linkedin_client_secret, authorization_
     
     return tokens.get("refresh_token"), tokens.get("access_token")
 
-def get_access_token(linkedin_client_id, linkedin_client_secret, linkedin_refresh_token):
+def get_linkedin_access_token(linkedin_client_id, linkedin_client_secret, linkedin_refresh_token):
     """Retrieve LinkedIn OAuth access token using a refresh token."""
     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
     data = {
@@ -108,7 +133,7 @@ def get_access_token(linkedin_client_id, linkedin_client_secret, linkedin_refres
     access_token = response.json().get("access_token")
     return access_token
 
-def get_urn(access_token):
+def get_linkedin_urn(access_token):
     """Retrieve LinkedIn URN using an access token."""
     post_url = "https://api.linkedin.com/v2/me"
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
@@ -118,7 +143,7 @@ def get_urn(access_token):
     urn = json.loads(response.content.decode('utf-8'))['id']
     return urn
     
-def upload_image(image, access_token, author_urn):
+def post_linkedin_image(image, access_token, author_urn):
     """Upload an image to LinkedIn and return the asset URN."""
     register_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
@@ -136,32 +161,24 @@ def upload_image(image, access_token, author_urn):
     upload_url = response_data['value']['uploadMechanism']['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']['uploadUrl']
     asset_urn = response_data['value']['asset']
 
-    # test image upload
-    #image_path = '/Users/anthonychamberas/Downloads/lip.jpg'
-    #with open(image_path, 'rb') as image_file:
-    #    requests.put(upload_url, data=image_file, headers={"Authorization": f"Bearer {access_token}"})
-
-    # save image to buffer
-    # image_bytes = image.tobytes()
-    buffer = io.BytesIO()
-    image.save(buffer, format='PNG')
-    image_bytes = buffer.getvalue()
+    # save image to bytes
+    image_bytes = image_to_bytes(image)
 
     requests.put(upload_url, data=image_bytes, headers={"Authorization": f"Bearer {access_token}"})
     
     return asset_urn
 
-def post_to_linkedin(text, image, linkedin_client_id, linkedin_client_secret, linkedin_refresh_token):
+def post_linkedin_post(text, image, linkedin_client_id, linkedin_client_secret, linkedin_refresh_token):
     """Post a text update with an image to LinkedIn."""
 
-    access_token = get_access_token(linkedin_client_id, linkedin_client_secret, linkedin_refresh_token)
+    access_token = get_linkedin_access_token(linkedin_client_id, linkedin_client_secret, linkedin_refresh_token)
     if not access_token:
         print(linkedin_client_id, linkedin_client_secret, linkedin_refresh_token)
         print("Failed to obtain LinkedIn access token.")
         return
 
-    author_urn = get_urn(access_token)
-    asset_urn = upload_image(image, access_token, author_urn)
+    author_urn = get_linkedin_urn(access_token)
+    asset_urn = post_linkedin_image(image, access_token, author_urn)
     post_url = "https://api.linkedin.com/v2/ugcPosts"
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     
@@ -187,7 +204,108 @@ def post_to_linkedin(text, image, linkedin_client_id, linkedin_client_secret, li
         "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
     }
 
-    print(author_urn, text, asset_urn)
+    response = requests.post(post_url, headers=headers, json=post_data)
+
+    print(response.content)
+
+    return response.content
+
+###############
+## WIX TOOLS ##
+###############
+
+def post_wix_blog(wix_site_id, wix_api_key, wix_member_id, post, image, publish=False):
+
+    # crop image and save to bytes
+    image_cropped = crop_image(image, 0, 50, 800, 510)
+    image_bytes = image_to_bytes(image_cropped)
+
+    # extract title and text from post
+    title = post.split('\n')[0]
+    title = title if title else "Untitled"
+
+    text = post.split('\n')[1:]
+
+    image_response = post_wix_image(image_bytes, wix_site_id, wix_api_key, f"{title}.png")
+    image_id = image_response["file"]["id"]
+    image_url = image_response["file"]["url"]
+
+    post_url = "https://www.wixapis.com/blog/v3/draft-posts/"
+
+    headers = {
+        "Authorization": wix_api_key, 
+        "wix-site-id": wix_site_id,
+        "Content-Type": "application/json"
+    }
+
+    post_data = {
+        "publish": publish,
+        "draftPost": {
+            "title": title,
+            "featured": True,
+            "coverMedia": {
+                "enabled": True,
+                "image": {
+                    "id": image_id,
+                    "url": image_url,
+                    "height": 460,
+                    "width": 800,
+                },
+                "displayed": True,
+                "custom": True
+            },
+        "memberId": wix_member_id,
+        "commentingEnabled": True,
+        "heroImage": {
+            "id": image_id,
+            "url": image_url,
+            "altText": title
+        },
+        "language": "en",
+        "richContent": {
+            "nodes": [
+                {
+                    "type": "IMAGE",
+                    "id": "",
+                    "nodes": [],
+                    "imageData": {
+                        "image": {
+                            "src": {
+                                "url": image_url,
+                                "height": 460,
+                                "width": 800,
+                                "private": False,
+                                "id": image_id
+                            }
+                        }
+                    }
+                }
+            ]
+          }
+        },
+        "fieldsets": ["URL", "RICH_CONTENT"]
+    }
+
+    ricos_document = generate_ricos(post)
+    post_data["draftPost"]["richContent"]["nodes"] = post_data["draftPost"]["richContent"]["nodes"] + ricos_document['blocks']
+
+    """
+                    {
+                "type": "PARAGRAPH",
+                "id": "pvirv1",
+                "nodes": [
+                    {
+                        "type": "TEXT",
+                        "id": "",
+                        "nodes": [],
+                        "textData": {
+                            "text": text,
+                            "decorations": []
+                        }
+                    }
+                ]
+            }
+    """
 
     response = requests.post(post_url, headers=headers, json=post_data)
 
@@ -195,3 +313,48 @@ def post_to_linkedin(text, image, linkedin_client_id, linkedin_client_secret, li
 
     return response.content
 
+def post_wix_image(image, wix_site_id, wix_api_key, filename="image.png"):
+
+    # Step 1: Get Upload URL
+    upload_url_endpoint = "https://www.wixapis.com/site-media/v1/files/generate-upload-url"
+
+    headers = {
+        "Authorization": wix_api_key, 
+        "wix-site-id": wix_site_id,
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "mimeType": "image/png",
+        "filename": filename
+    }
+
+    response = requests.post(upload_url_endpoint, headers=headers, data=json.dumps(data))
+
+    if response.status_code == 200:
+        upload_url_data = response.json()
+        upload_url = upload_url_data["uploadUrl"]
+
+        # Step 2: Upload the image
+        upload_headers = {'Content-Type': 'image/jpeg'}  # Adjust content type if needed
+        upload_response = requests.put(upload_url, headers=upload_headers, data=image, params=data)
+
+        if upload_response.status_code == 200:
+            print("Image uploaded successfully!")
+            return upload_response.json()
+        else:
+            message = {
+                "status":"failure",
+                "code": upload_response.status_code,
+                "message": f"file upload failed: {upload_response.text}"
+            }
+
+            return message
+    else:
+        message = {
+            "status":"failure",
+            "code": upload_response.status_code,
+            "message": f"upload url failed: {upload_response.text}"
+        }
+
+        return message
