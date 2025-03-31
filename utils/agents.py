@@ -154,7 +154,11 @@ def generate_post(topic):
         max_retries=2,
     )
 
-    prompt = f"Create an engaging LinkedIn post about: {topic}. Keep it professional and insightful with a hint of personality.  It should be under 200 words.  Include a title with emojis.  Do not use markdown.  Include references and their URLs.  Add a call to action that encourages the reader to reach out to Four37 to learn more."
+    prompt = f"""
+        Create an engaging LinkedIn post about this topic: "{topic}". 
+        Keep it professional and insightful with a hint of personality.  Give it a tone of storytelling, incorporating personal experience.
+        It should be under 200 words.  Include a title with emojis.  Include hashtags.  Do not use markdown.  Include references and their URLs.  
+        Add a call to action that encourages the reader to reach out to Four37 to learn more."""
     messages=[{"role": "system", "content": "You are an expert LinkedIn content writer."},
         {"role": "user", "content": prompt}]
  
