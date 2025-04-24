@@ -48,35 +48,36 @@ with r:
                 st.toast('Posted to LinkedIn!')
 
                 # post to Wix blog
-                # post_wix_blog(wix_site_id, wix_api_key, wix_member_id, st.session_state['blog'], st.session_state['img'])
-                # st.toast('Posted to Blog!')
+                post_wix_blog(wix_site_id, wix_api_key, wix_member_id, st.session_state['blog'], st.session_state['img'])
+                st.toast('Posted to Blog!')
 
 st.divider()
 
 left_col, right_col = st.columns([1,1])
 
 with left_col:
-    topic = st.text_input('Enter a topic', placeholder='Enter a topic', label_visibility="collapsed")
-    if topic:
-        with st.spinner('Writing...'):
+    t_tab, p_tab, b_tab = st.tabs(['Topic', 'Post', 'Blog'])
+    with t_tab:
+        topic = st.text_area('Enter a topic', placeholder='Enter a topic', label_visibility="collapsed", height=580)
+        if topic:
+            with st.spinner('Writing...'):
+                if st.session_state['topic'] != topic:
+                    st.session_state['topic'] = topic
+                    st.session_state['post'] = generate_post(topic)
+                    st.session_state['blog'] = generate_blog(st.session_state['post'])
+                    st.toast('Post and blog generated!')
 
-            if st.session_state['topic'] != topic:
-                st.session_state['topic'] = topic
-                st.session_state['post'] = generate_post(topic)
-                st.session_state['blog'] = generate_blog(st.session_state['post'])
+    with p_tab:
+        # display post in text box for editing
+        post = st.text_area('Post', st.session_state['post'], height=580, label_visibility="collapsed", key='post_edit')
+        if st.session_state['post'] != st.session_state['post_edit']:
+            st.session_state['post'] = st.session_state['post_edit']
 
-            p_tab, b_tab = st.tabs(['Post', 'Blog'])
-            with p_tab:
-                # display post in text box for editing
-                post = st.text_area('Post', st.session_state['post'], height=580, label_visibility="collapsed", key='post_edit')
-                if st.session_state['post'] != st.session_state['post_edit']:
-                    st.session_state['post'] = st.session_state['post_edit']
-
-            with b_tab:
-                # display post in text box for editing
-                blog = st.text_area('Blog', st.session_state['blog'], height=580, label_visibility="collapsed", key='blog_edit')
-                if st.session_state['blog'] != st.session_state['blog_edit']:
-                    st.session_state['blog'] = st.session_state['blog_edit']
+    with b_tab:
+        # display post in text box for editing
+        blog = st.text_area('Blog', st.session_state['blog'], height=580, label_visibility="collapsed", key='blog_edit')
+        if st.session_state['blog'] != st.session_state['blog_edit']:
+            st.session_state['blog'] = st.session_state['blog_edit']
 
 with right_col:
     # display buttton to create image if there is post content

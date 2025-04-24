@@ -7,7 +7,7 @@ import textwrap
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from urllib.parse import urlencode
-from utils.modules.markdown_to_ricos import MarkdownToRicosConverter
+from utils.markdown_to_ricos import convert_markdown_to_ricos
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'creds/gristmill5-e521e2f08f35.json'
 
@@ -262,50 +262,29 @@ def post_wix_blog(wix_site_id, wix_api_key, wix_member_id, post, image, publish=
             "altText": title
         },
         "language": "en",
-        "richContent": {
-            "nodes": [
-                {
-                    "type": "IMAGE",
-                    "id": "",
-                    "nodes": [],
-                    "imageData": {
-                        "image": {
-                            "src": {
-                                "url": image_url,
-                                "height": 460,
-                                "width": 800,
-                                "private": False,
-                                "id": image_id
-                            }
-                        }
-                    }
-                }
-            ]
-          }
         },
         "fieldsets": ["URL", "RICH_CONTENT"]
     }
 
-    ricos_document = generate_ricos(post)
-    post_data["draftPost"]["richContent"]["nodes"] = post_data["draftPost"]["richContent"]["nodes"] + ricos_document['blocks']
-
-    """
-                    {
-                "type": "PARAGRAPH",
-                "id": "pvirv1",
-                "nodes": [
-                    {
-                        "type": "TEXT",
-                        "id": "",
-                        "nodes": [],
-                        "textData": {
-                            "text": text,
-                            "decorations": []
-                        }
-                    }
-                ]
+    image_block = {
+        "type": "IMAGE",
+        "id": "",
+        "nodes": [],
+        "imageData": {
+            "image": {
+                "src": {
+                    "url": image_url,
+                    "height": 460,
+                    "width": 800,
+                    "private": False,
+                    "id": image_id
+                }
             }
-    """
+        }
+    }
+
+    post_data["draftPost"]["richContent"] = convert_markdown_to_ricos(post)["richContent"]
+    post_data["draftPost"]["richContent"]["nodes"].append(image_block)
 
     response = requests.post(post_url, headers=headers, json=post_data)
 
