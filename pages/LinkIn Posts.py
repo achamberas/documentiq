@@ -79,17 +79,23 @@ with left_col:
         if st.session_state['blog'] != st.session_state['blog_edit']:
             st.session_state['blog'] = st.session_state['blog_edit']
 
+
 with right_col:
     # display buttton to create image if there is post content
     if st.session_state['post'] != '':
+
+
+        # create caption and prompt
+        if 'image_prompt_gen' not in st.session_state:
+            st.session_state['caption'] = generate_image_caption(st.session_state['post'])
+            st.session_state['image_prompt_gen'] = generate_image_prompt(st.session_state['post'])
+        st.text_area('Prompt', value=st.session_state['image_prompt_gen'], key='image_prompt')
+
         if st.button("Generate Image", use_container_width=True, type='primary'):
             with st.spinner('Creating image...'):
-                # create caption
-                st.session_state['caption'] = generate_image_caption(st.session_state['post'])
 
                 # create image
-                image_prompt = generate_image_prompt(st.session_state['post'])
-                st.session_state['orig_img'] = generate_image(image_prompt)
+                st.session_state['orig_img'] = generate_image(st.session_state['image_prompt'])
                 st.session_state['img'] = st.session_state['orig_img']
 
         if 'orig_img' in st.session_state:
